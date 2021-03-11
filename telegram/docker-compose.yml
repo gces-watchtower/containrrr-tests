@@ -1,0 +1,19 @@
+version: "3"
+
+services:
+  pytest:
+    image: mexazonic/example-watchtower
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+  watchtower:
+    image: containrrr/watchtower
+    environment: 
+      - WATCHTOWER_NOTIFICATIONS=shoutrrr
+      - WATCHTOWER_NOTIFICATION_URL=telegram://1630241163:AAFQxAFGFyERgAXOYKalQbxd4zKQY8J0Y_c@telegram?channels=-1001450031218
+      - WATCHTOWER_NOTIFICATION_URL=https://1660ac38f248f7b3a737d66890cc0a48.m.pipedream.net
+      
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 30
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
