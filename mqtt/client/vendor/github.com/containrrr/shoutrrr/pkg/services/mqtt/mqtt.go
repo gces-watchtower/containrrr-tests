@@ -2,13 +2,12 @@ package mqtt
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/url"
 
-	"github.com/containrrr/shoutrrr/pkg/util"
 	"github.com/containrrr/shoutrrr/pkg/format"
-	
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 
 	"github.com/containrrr/shoutrrr/pkg/services/standard"
@@ -16,8 +15,7 @@ import (
 )
 
 const (
-	maxLength = 4096
-	//maxLength = 4096
+	maxlength = 4096
 )
 
 // Service sends notifications to mqtt topic
@@ -29,20 +27,9 @@ type Service struct {
 
 // Send notification to mqtt
 func (service *Service) Send(message string, params *types.Params) error {
-	//test := message[:maxLength] + "\n" + message[maxLength:]
-	//message = test
-	//fmt.Println(test)
-
-	items, omitted := util.MessageItemsFromLines(message, types.MessageLimit{ maxLength, maxLength, 2})
-	
-	//fmt.Println(items[0].Text)
-	//fmt.Println(omitted)
-
-	if omitted > 0 {
-		message = items[0].Text
-		//fmt.Println(message)    
-        service.Logf("omitted %v character(s) from the message", omitted)
-    }
+	if len(message) > maxlength {
+		return errors.New("message exceeds the max length")
+	}
 
 	config := *service.config
 	if err := service.pkr.UpdateConfigFromParams(&config, params); err != nil {
