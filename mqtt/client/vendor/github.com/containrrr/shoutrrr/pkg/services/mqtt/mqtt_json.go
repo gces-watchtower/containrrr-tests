@@ -1,6 +1,6 @@
 package mqtt
 
-// JSON to be used as a notification payload for the telegram notification service
+// JSON to be used as a notification payload for the mqtt notification service
 type SendMessagePayload struct {
 	Text                string `json:"text"`
 	Topic               string `json:"topic"`

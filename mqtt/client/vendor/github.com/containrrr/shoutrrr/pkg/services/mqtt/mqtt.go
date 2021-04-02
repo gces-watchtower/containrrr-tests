@@ -43,7 +43,7 @@ func (service *Service) Send(message string, params *types.Params) error {
 func (service *Service) Initialize(configURL *url.URL, logger *log.Logger) error {
 	service.Logger.SetLogger(logger)
 	service.config = &Config{
-		DisableTLS:    true,
+		DisableTLS:    false,
 	}
 	service.pkr = format.NewPropKeyResolver(service.config)
 	if err := service.config.setURL(&service.pkr, configURL); err != nil {
@@ -71,13 +71,23 @@ func publish(client mqtt.Client, topic string, data []byte) {
 
 // Publish payload
 func publishMessageToTopic(message string, config *Config) error {
-	postURL := fmt.Sprintf("tcp://%s:%d", config.Host, config.Port)
+
+	scheme := config.Scheme
+
+	// TLS
+	if !config.DisableTLS {
+		scheme = "mqtts"
+	}
+
+	postURL := fmt.Sprintf("%s://%s:%d", scheme, config.Host, config.Port)
 	payload := createSendMessagePayload(message, config.Topic, config)
 	
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}
+
+	print(scheme)
 
 	// Config
     opts := mqtt.NewClientOptions()
@@ -86,6 +96,24 @@ func publishMessageToTopic(message string, config *Config) error {
 
 	opts.OnConnectionLost = connectLostHandler
     
+	if len (config.ClientId) > 0 {
+		opts.SetClientID(config.ClientId)
+	}
+
+	if len (config.Username) > 0 {
+		opts.SetUsername(config.Username)
+	}
+
+	if len (config.Password) > 0 {
+    	opts.SetPassword(config.Password)
+	}
+
+	// TLS
+	if !config.DisableTLS {
+		tlsConfig := setTlsConfig()
+		opts.SetTLSConfig(tlsConfig)
+	}
+
 	// Start client
 	client := mqtt.NewClient(opts)
     
@@ -99,7 +127,7 @@ func publishMessageToTopic(message string, config *Config) error {
 
     publish(client, config.Topic, jsonData)
 
-    client.Disconnect(1)
+    client.Disconnect(250)
 
-	return nil
+	return err
 }
