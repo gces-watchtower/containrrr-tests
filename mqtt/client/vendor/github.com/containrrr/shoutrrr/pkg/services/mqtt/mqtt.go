@@ -1,7 +1,6 @@
 package mqtt
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -36,7 +35,12 @@ func (service *Service) Send(message string, params *types.Params) error {
 		return err
 	}
 
-	return publishMessageToTopic(message, &config)
+
+	if err := service.PublishMessageToTopic(message, &config); err != nil {
+		return fmt.Errorf("an error occurred while sending notification to generic webhook: %s", err.Error())
+	}
+
+	return nil
 }
 
 // Initialize loads ServiceConfig from configURL and sets logger for this Service
@@ -44,6 +48,7 @@ func (service *Service) Initialize(configURL *url.URL, logger *log.Logger) error
 	service.Logger.SetLogger(logger)
 	service.config = &Config{
 		DisableTLS:    false,
+		Port:          8883,
 	}
 	service.pkr = format.NewPropKeyResolver(service.config)
 	if err := service.config.setURL(&service.pkr, configURL); err != nil {
@@ -54,69 +59,21 @@ func (service *Service) Initialize(configURL *url.URL, logger *log.Logger) error
 }
 
 // GetConfig returns the Config for the service
-func (service *Service) GetConfig() *Config {
+func (service *Service)	 GetConfig() *Config {
 	return service.config
 }
 
-// Handle Connection Lost
-var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-    fmt.Printf("Connect lost: %v", err)
-}
-
 // Publish to topic
-func publish(client mqtt.Client, topic string, data []byte) {
-	token := client.Publish(topic, 0, false, data)
+func (service *Service) Publish(client mqtt.Client, topic string, message string) {
+	token := client.Publish(topic, 0, false, message)
 	token.Wait()
 }
 
-// Publish payload
-func publishMessageToTopic(message string, config *Config) error {
-
-	scheme := config.Scheme
-
-	// TLS
-	if !config.DisableTLS {
-		scheme = "mqtts"
-	}
-
-	postURL := fmt.Sprintf("%s://%s:%d", scheme, config.Host, config.Port)
-	payload := createSendMessagePayload(message, config.Topic, config)
-	
-	jsonData, err := json.Marshal(payload)
-	if err != nil {
-		return err
-	}
-
-	print(scheme)
-
-	// Config
-    opts := mqtt.NewClientOptions()
-
-    opts.AddBroker(postURL)
-
-	opts.OnConnectionLost = connectLostHandler
-    
-	if len (config.ClientId) > 0 {
-		opts.SetClientID(config.ClientId)
-	}
-
-	if len (config.Username) > 0 {
-		opts.SetUsername(config.Username)
-	}
-
-	if len (config.Password) > 0 {
-    	opts.SetPassword(config.Password)
-	}
-
-	// TLS
-	if !config.DisableTLS {
-		tlsConfig := setTlsConfig()
-		opts.SetTLSConfig(tlsConfig)
-	}
-
-	// Start client
+// PublishMessageToTopic
+func (service *Service) PublishMessageToTopic(message string, config *Config) error {
+	postURL := config.MqttURL()	
+	opts := config.GetClientConfig(postURL)
 	client := mqtt.NewClient(opts)
-    
 	token := client.Connect();
 
 	if token.Error() != nil {
@@ -125,9 +82,9 @@ func publishMessageToTopic(message string, config *Config) error {
 
 	token.Wait()
 
-    publish(client, config.Topic, jsonData)
+    service.Publish(client, config.Topic, message)
 
     client.Disconnect(250)
 
-	return err
+	return nil
 }

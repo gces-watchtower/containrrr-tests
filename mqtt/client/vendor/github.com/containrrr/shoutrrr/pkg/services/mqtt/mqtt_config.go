@@ -8,30 +8,27 @@ import (
 	"log"
 	"net/url"
 	"strconv"
-	"strings"
 
 	"github.com/containrrr/shoutrrr/pkg/format"
 	"github.com/containrrr/shoutrrr/pkg/types"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 // Config for use within the mqtt
 type Config struct {
-	Scheme       string       
-	Host       	 string    	 `key:"broker" default:"" desc:"MQTT broker server hostname or IP address"`
-	Port         int64       `key:"port" default:"1883" desc:"TCP Port"`
+	Host       	 string    	 `key:"host" default:"" desc:"MQTT broker server hostname or IP address"`
+	Port         uint16       `key:"port" default:"8883" desc:"SMTP server port, common ones are 8883, 1883"`
 	Topic        string    	 `key:"topic" default:"" desc:"Topic where the message is sent"`
 	ClientId     string      `key:"clientid" default:"" desc:"client's id from the message is sent"`
 	Username     string      `key:"username" default:"" desc:"username for auth"`
 	Password     string      `key:"password" default:"" desc:"password for auth"`
 	DisableTLS   bool        `key:"disabletls" default:"No"`
-	ParseMode    parseMode   `key:"parsemode" default:"None" desc:"How the text message should be parsed"`
+	Verbose      bool        `key:"verbose" default:"false" desc:"show connection log"`
 }
 
 // Enums returns the fields that should use a corresponding EnumFormatter to Print/Parse their values
 func (config *Config) Enums() map[string]types.EnumFormatter {
-	return map[string]types.EnumFormatter{
-		"ParseMode": parseModes.Enum,
-	}
+	return map[string]types.EnumFormatter{}
 }
 
 // GetURL returns a URL representation of it's current field values
@@ -47,6 +44,7 @@ func (config *Config) SetURL(url *url.URL) error {
 }
 
 func (config *Config) getURL(resolver types.ConfigQueryResolver) *url.URL {
+
 	return &url.URL{
 		Host:       fmt.Sprintf("%s:%d", config.Host, config.Port),
 		Scheme:     Scheme,
@@ -56,7 +54,77 @@ func (config *Config) getURL(resolver types.ConfigQueryResolver) *url.URL {
 
 }
 
-func setTlsConfig() *tls.Config {
+func (config *Config) setURL(resolver types.ConfigQueryResolver, url *url.URL) error {
+	
+	config.Host = url.Hostname()
+
+	if port, err := strconv.ParseUint(url.Port(), 10, 16); err == nil {
+		config.Port = uint16(port)
+	}
+
+	for key, vals := range url.Query() {
+		if err := resolver.Set(key, vals[0]); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// MqttURL returns a string that is synchronized with the config props
+func (config *Config) MqttURL() string {
+	MqttHost := config.Host
+	MqttPort := config.Port
+	scheme := DefaultWebhookScheme
+	if config.DisableTLS {
+		scheme = Scheme[:4]
+	}
+	return fmt.Sprintf("%s://%s:%d", scheme, MqttHost, MqttPort)
+}
+
+// ConnectiontHandler is a callback to show when the connection is established
+var ConnectiontHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
+    fmt.Println("Connected")
+}
+
+// ConnectiontLostHandler is a callback to show when the connection is lost 
+var ConnectiontLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error)  {
+    fmt.Printf("Connection lost: %v", err)
+}
+
+// MqttURL return the client options
+func (config *Config) GetClientConfig(postURL string) *mqtt.ClientOptions {
+		opts := mqtt.NewClientOptions()
+
+		opts.AddBroker(postURL)
+	
+		if len (config.ClientId) > 0 {
+			opts.SetClientID(config.ClientId)
+		}
+	
+		if len (config.Username) > 0 {
+			opts.SetUsername(config.Username)
+		}
+	
+		if len (config.Password) > 0 {
+			opts.SetPassword(config.Password)
+		}
+
+		if config.Verbose {
+			opts.OnConnect = ConnectiontHandler
+			opts.OnConnectionLost = ConnectiontLostHandler
+		}
+	
+		if !config.DisableTLS {
+			tlsConfig := config.GetTlsConfig()
+			opts.SetTLSConfig(tlsConfig)
+		}
+
+		return opts
+}
+
+// GetTlsConfig returns the configuration with the certificates for TLS
+func  (config *Config) GetTlsConfig() *tls.Config {
     certpool := x509.NewCertPool()
     ca, err := ioutil.ReadFile("certs/ca.crt")
 	
@@ -78,69 +146,9 @@ func setTlsConfig() *tls.Config {
     }
 }
 
-func Split(r rune) bool {
-    return r == '/' || r == '?' || r == ':'
-}
-
-func getTopic(r rune) bool {
-    return r == '&' || r == '?' || r == '='
-}
-
-func Find(slice []string, val string) (int, bool) {
-    for i, item := range slice {
-        if item == val {
-            return i, true
-        }
-    }
-    return -1, false
-}
-
-
-func (config *Config) setURL(resolver types.ConfigQueryResolver, url *url.URL) error {
-
-	u := strings.FieldsFunc(url.String(), Split)
-	topic := strings.FieldsFunc(url.String(), getTopic)
-
-	port, err := strconv.ParseInt(u[2], 10, 64)
-
-	if err != nil {
-		return err
-	}
-
-	tls, err := strconv.ParseBool(topic[4])
-	
-	if err != nil {
-		return err
-	}
-
-	k, found := Find(topic, "clientId")
-	if found && len(topic) >= k + 1 {
-		config.ClientId = topic[k+1]
-	}
-
-	k, found = Find(topic, "username")
-	if found && len(topic) >= k + 1 {
-		config.Username = topic[k+1]
-	}
-
-	k, found = Find(topic, "password")
-	if found && len(topic) >= k + 1 {
-		config.Password = topic[k+1]
-	}
-
-	if len(u) > 4 {
-		config.Scheme = "tcp"
-		config.Host = u[1]
-		config.Port = port
-		config.Topic = topic[2]
-		config.DisableTLS = tls		
-	}
-
-	return err
-}
-
-// Scheme is the identifying part of this service's configuration URL
 const (
+	// Scheme is the identifying part of this service's configuration URL
 	Scheme = "mqtt"
+	// DefaultWebhookScheme is the scheme used for webhook URLs unless overridden
+	DefaultWebhookScheme = "mqtts"
 )
-
