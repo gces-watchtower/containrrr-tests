@@ -10,7 +10,7 @@ import (
 func main() {
 
 	broker := "192.168.0.102"
-    port := 8883
+	port := 8883
 	topic := "topic/test"
 	disableTls := "false"
 	clientId := "1"

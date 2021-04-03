@@ -35,7 +35,6 @@ func (service *Service) Send(message string, params *types.Params) error {
 		return err
 	}
 
-
 	if err := service.PublishMessageToTopic(message, &config); err != nil {
 		return fmt.Errorf("an error occurred while sending notification to generic webhook: %s", err.Error())
 	}
@@ -47,8 +46,8 @@ func (service *Service) Send(message string, params *types.Params) error {
 func (service *Service) Initialize(configURL *url.URL, logger *log.Logger) error {
 	service.Logger.SetLogger(logger)
 	service.config = &Config{
-		DisableTLS:    false,
-		Port:          8883,
+		DisableTLS: false,
+		Port:       8883,
 	}
 	service.pkr = format.NewPropKeyResolver(service.config)
 	if err := service.config.setURL(&service.pkr, configURL); err != nil {
@@ -59,7 +58,7 @@ func (service *Service) Initialize(configURL *url.URL, logger *log.Logger) error
 }
 
 // GetConfig returns the Config for the service
-func (service *Service)	 GetConfig() *Config {
+func (service *Service) GetConfig() *Config {
 	return service.config
 }
 
@@ -71,10 +70,10 @@ func (service *Service) Publish(client mqtt.Client, topic string, message string
 
 // PublishMessageToTopic
 func (service *Service) PublishMessageToTopic(message string, config *Config) error {
-	postURL := config.MqttURL()	
+	postURL := config.MqttURL()
 	opts := config.GetClientConfig(postURL)
 	client := mqtt.NewClient(opts)
-	token := client.Connect();
+	token := client.Connect()
 
 	if token.Error() != nil {
 		return token.Error()
@@ -82,9 +81,9 @@ func (service *Service) PublishMessageToTopic(message string, config *Config) er
 
 	token.Wait()
 
-    service.Publish(client, config.Topic, message)
+	service.Publish(client, config.Topic, message)
 
-    client.Disconnect(250)
+	client.Disconnect(250)
 
 	return nil
 }

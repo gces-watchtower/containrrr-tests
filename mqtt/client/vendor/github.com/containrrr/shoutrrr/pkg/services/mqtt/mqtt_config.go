@@ -16,14 +16,15 @@ import (
 
 // Config for use within the mqtt
 type Config struct {
-	Host       	 string    	 `key:"host" default:"" desc:"MQTT broker server hostname or IP address"`
-	Port         uint16       `key:"port" default:"8883" desc:"SMTP server port, common ones are 8883, 1883"`
-	Topic        string    	 `key:"topic" default:"" desc:"Topic where the message is sent"`
-	ClientId     string      `key:"clientid" default:"" desc:"client's id from the message is sent"`
-	Username     string      `key:"username" default:"" desc:"username for auth"`
-	Password     string      `key:"password" default:"" desc:"password for auth"`
-	DisableTLS   bool        `key:"disabletls" default:"No"`
-	Verbose      bool        `key:"verbose" default:"false" desc:"show connection log"`}
+	Host       string `key:"host" default:"" desc:"MQTT broker server hostname or IP address"`
+	Port       uint16 `key:"port" default:"8883" desc:"SMTP server port, common ones are 8883, 1883"`
+	Topic      string `key:"topic" default:"" desc:"Topic where the message is sent"`
+	ClientId   string `key:"clientid" default:"" desc:"client's id from the message is sent"`
+	Username   string `key:"username" default:"" desc:"username for auth"`
+	Password   string `key:"password" default:"" desc:"password for auth"`
+	DisableTLS bool   `key:"disabletls" default:"No"`
+	Verbose    bool   `key:"verbose" default:"false" desc:"show connection log"`
+}
 
 // Enums returns the fields that should use a corresponding EnumFormatter to Print/Parse their values
 func (config *Config) Enums() map[string]types.EnumFormatter {
@@ -54,7 +55,7 @@ func (config *Config) getURL(resolver types.ConfigQueryResolver) *url.URL {
 }
 
 func (config *Config) setURL(resolver types.ConfigQueryResolver, url *url.URL) error {
-	
+
 	config.Host = url.Hostname()
 
 	if port, err := strconv.ParseUint(url.Port(), 10, 16); err == nil {
@@ -83,66 +84,66 @@ func (config *Config) MqttURL() string {
 
 // ConnectiontHandler is a callback to show when the connection is established
 var ConnectiontHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
-    fmt.Println("Connected")
+	fmt.Println("Connected")
 }
 
-// ConnectiontLostHandler is a callback to show when the connection is lost 
-var ConnectiontLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error)  {
-    fmt.Printf("Connection lost: %v", err)
+// ConnectiontLostHandler is a callback to show when the connection is lost
+var ConnectiontLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
+	fmt.Printf("Connection lost: %v", err)
 }
 
 // MqttURL return the client options
 func (config *Config) GetClientConfig(postURL string) *mqtt.ClientOptions {
-		opts := mqtt.NewClientOptions()
+	opts := mqtt.NewClientOptions()
 
-		opts.AddBroker(postURL)
-	
-		if len (config.ClientId) > 0 {
-			opts.SetClientID(config.ClientId)
-		}
-	
-		if len (config.Username) > 0 {
-			opts.SetUsername(config.Username)
-		}
-	
-		if len (config.Password) > 0 {
-			opts.SetPassword(config.Password)
-		}
+	opts.AddBroker(postURL)
 
-		if config.Verbose {
-			opts.OnConnect = ConnectiontHandler
-			opts.OnConnectionLost = ConnectiontLostHandler
-		}
-	
-		if !config.DisableTLS {
-			tlsConfig := config.GetTlsConfig()
-			opts.SetTLSConfig(tlsConfig)
-		}
+	if len(config.ClientId) > 0 {
+		opts.SetClientID(config.ClientId)
+	}
 
-		return opts
+	if len(config.Username) > 0 {
+		opts.SetUsername(config.Username)
+	}
+
+	if len(config.Password) > 0 {
+		opts.SetPassword(config.Password)
+	}
+
+	if config.Verbose {
+		opts.OnConnect = ConnectiontHandler
+		opts.OnConnectionLost = ConnectiontLostHandler
+	}
+
+	if !config.DisableTLS {
+		tlsConfig := config.GetTlsConfig()
+		opts.SetTLSConfig(tlsConfig)
+	}
+
+	return opts
 }
 
 // GetTlsConfig returns the configuration with the certificates for TLS
-func  (config *Config) GetTlsConfig() *tls.Config {
-    certpool := x509.NewCertPool()
-    ca, err := ioutil.ReadFile("certs/ca.crt")
-	
-	if err != nil {
-        log.Fatalln(err.Error())
-    }
-    certpool.AppendCertsFromPEM(ca)
+func (config *Config) GetTlsConfig() *tls.Config {
+	certpool := x509.NewCertPool()
+	ca, err := ioutil.ReadFile("certs/ca.crt")
 
-    clientKeyPair, err := tls.LoadX509KeyPair("certs/client.crt", "certs/client.key")
-    if err != nil {
-        panic(err)
-    }
-    return &tls.Config{
-        RootCAs: certpool,
-        ClientAuth: tls.NoClientCert,
-        ClientCAs: nil,
-        InsecureSkipVerify: true,
-        Certificates: []tls.Certificate{clientKeyPair},
-    }
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	certpool.AppendCertsFromPEM(ca)
+
+	clientKeyPair, err := tls.LoadX509KeyPair("certs/client.crt", "certs/client.key")
+	if err != nil {
+		panic(err)
+	}
+	return &tls.Config{
+		RootCAs:            certpool,
+		ClientAuth:         tls.NoClientCert,
+		ClientCAs:          nil,
+		InsecureSkipVerify: true,
+		Certificates:       []tls.Certificate{clientKeyPair},
+	}
 }
 
 const (
