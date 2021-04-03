@@ -23,7 +23,6 @@ type Config struct {
 	Username   string `key:"username" default:"" desc:"username for auth"`
 	Password   string `key:"password" default:"" desc:"password for auth"`
 	DisableTLS bool   `key:"disabletls" default:"No"`
-	Verbose    bool   `key:"verbose" default:"false" desc:"show connection log"`
 }
 
 // Enums returns the fields that should use a corresponding EnumFormatter to Print/Parse their values
