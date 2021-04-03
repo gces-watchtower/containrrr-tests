@@ -82,16 +82,6 @@ func (config *Config) MqttURL() string {
 	return fmt.Sprintf("%s://%s:%d", scheme, MqttHost, MqttPort)
 }
 
-// ConnectiontHandler is a callback to show when the connection is established
-var ConnectiontHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
-	fmt.Println("Connected")
-}
-
-// ConnectiontLostHandler is a callback to show when the connection is lost
-var ConnectiontLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-	fmt.Printf("Connection lost: %v", err)
-}
-
 // MqttURL return the client options
 func (config *Config) GetClientConfig(postURL string) *mqtt.ClientOptions {
 	opts := mqtt.NewClientOptions()
@@ -110,11 +100,6 @@ func (config *Config) GetClientConfig(postURL string) *mqtt.ClientOptions {
 		opts.SetPassword(config.Password)
 	}
 
-	if config.Verbose {
-		opts.OnConnect = ConnectiontHandler
-		opts.OnConnectionLost = ConnectiontLostHandler
-	}
-
 	if !config.DisableTLS {
 		tlsConfig := config.GetTlsConfig()
 		opts.SetTLSConfig(tlsConfig)
@@ -126,14 +111,14 @@ func (config *Config) GetClientConfig(postURL string) *mqtt.ClientOptions {
 // GetTlsConfig returns the configuration with the certificates for TLS
 func (config *Config) GetTlsConfig() *tls.Config {
 	certpool := x509.NewCertPool()
-	ca, err := ioutil.ReadFile("certs/ca.crt")
+	ca, err := ioutil.ReadFile("ca.crt")
 
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
 	certpool.AppendCertsFromPEM(ca)
 
-	clientKeyPair, err := tls.LoadX509KeyPair("certs/client.crt", "certs/client.key")
+	clientKeyPair, err := tls.LoadX509KeyPair("client.crt", "client.key")
 	if err != nil {
 		panic(err)
 	}

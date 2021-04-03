@@ -16,12 +16,11 @@ func main() {
 	clientId := "1"
 	username := "eugenio"
 	password := "12345"
-	verbose := "true"
 
 	// Config
 	mqtt.NewClientOptions()
 
-	url := fmt.Sprintf("mqtt://%s:%d?topic=%s&disableTls=%s&clientId=%s&username=%s&password=%s&verbose=%s", broker, port, topic, disableTls, clientId, username, password, verbose)
+	url := fmt.Sprintf("mqtt://%s:%d?topic=%s&disableTls=%s&clientId=%s&username=%s&password=%s", broker, port, topic, disableTls, clientId, username, password)
 
 	err := shoutrrr.Send(url, "Implementing TLS")
 
