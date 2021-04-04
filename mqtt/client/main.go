@@ -9,7 +9,7 @@ import (
 
 func main() {
 
-	broker := "192.168.0.102"
+	broker := "localhost"
 	port := 8883
 	topic := "topic/test"
 	disableTls := "false"
