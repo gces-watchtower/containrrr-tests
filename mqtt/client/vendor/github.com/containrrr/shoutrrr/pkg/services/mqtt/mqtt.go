@@ -27,6 +27,8 @@ type Service struct {
 	pkr    format.PropKeyResolver
 }
 
+
+
 // Send notification to mqtt
 func (service *Service) Send(message string, params *types.Params) error {
 	//test := message[:maxLength] + "\n" + message[maxLength:]
@@ -77,18 +79,29 @@ func (service *Service) GetConfig() *Config {
 	return service.config
 }
 
+
+func(service *Service) LostConnection(err error) {
+	service.Logf("Connect lost: %v", err)	
+}
+
+
 // Handle Connection Lost
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-	
-	service.Logf("Connect lost: %v", err)
-
+    
+	fmt.Printf("Connect lost: %v", err)
+	if err != nil{
+		//LostConnection(err)
+	}
 }
+
 
 // Publish to topic
 func publish(client mqtt.Client, topic string, data []byte) {
 	token := client.Publish(topic, 0, false, data)
 	token.Wait()
 }
+
+
 
 // Publish payload
 func publishMessageToTopic(message string, config *Config) error {
@@ -124,3 +137,7 @@ func publishMessageToTopic(message string, config *Config) error {
 
 	return nil
 }
+
+
+
+

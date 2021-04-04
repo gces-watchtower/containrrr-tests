@@ -52,7 +52,6 @@ func (config *Config) getURL(resolver types.ConfigQueryResolver) *url.URL {
 }
 
 func (config *Config) setURL(resolver types.ConfigQueryResolver, url *url.URL) error {
-
 	
 	for key, vals := range url.Query() {
 		
@@ -62,21 +61,15 @@ func (config *Config) setURL(resolver types.ConfigQueryResolver, url *url.URL) e
 	
 	}
 
-	//fmt.Println(config.Topic)
-
-	u := strings.Split(url.Host, ":")
-	//topic := strings.Split(url.RawQuery, "=")
-	
+	u := strings.Split(url.Host, ":")	
 	port, err := strconv.ParseInt(u[1], 10, 64)	
 	 
 	if err != nil{ 
 	 	return err
 	}
 
-
 	config.Host = u[0]
 	config.Port = port
-	//config.Topic = topic[1]
 
 	return nil
 }
