@@ -35,7 +35,6 @@ func (config *Config) GetURL() *url.URL {
 // SetURL updates a ServiceConfig from a URL representation of it's field values
 func (config *Config) SetURL(url *url.URL) error {
 	resolver := format.NewPropKeyResolver(config)	
-	fmt.Println("aaaaaaaaaaaaaa")
 	return config.setURL(&resolver, url)
 }
 
@@ -49,6 +48,7 @@ func (config *Config) getURL(resolver types.ConfigQueryResolver) *url.URL {
 		RawQuery:   format.BuildQuery(resolver),
 	}
 
+	
 }
 
 func (config *Config) setURL(resolver types.ConfigQueryResolver, url *url.URL) error {
@@ -70,6 +70,7 @@ func (config *Config) setURL(resolver types.ConfigQueryResolver, url *url.URL) e
 
 	config.Host = u[0]
 	config.Port = port
+	
 
 	return nil
 }

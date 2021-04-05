@@ -17,7 +17,6 @@ import (
 
 const (
 	maxLength = 4096
-	//maxLength = 4096
 )
 
 // Service sends notifications to mqtt topic
@@ -31,18 +30,12 @@ type Service struct {
 
 // Send notification to mqtt
 func (service *Service) Send(message string, params *types.Params) error {
-	//test := message[:maxLength] + "\n" + message[maxLength:]
-	//message = test
-	//fmt.Println(test)
 
 	items, omitted := util.MessageItemsFromLines(message, types.MessageLimit{ maxLength, maxLength, 2})
 	
-	//fmt.Println(items[0].Text)
-	//fmt.Println(omitted)
 
 	if omitted > 0 {
 		message = items[0].Text
-		//fmt.Println(message)    
         service.Logf("omitted %v character(s) from the message", omitted)
     }
 
@@ -70,7 +63,6 @@ func (service *Service) Initialize(configURL *url.URL, logger *log.Logger) error
 	}
 
 	
-
 	return nil
 }
 
@@ -80,17 +72,21 @@ func (service *Service) GetConfig() *Config {
 }
 
 
-func(service *Service) LostConnection(err error) {
-	service.Logf("Connect lost: %v", err)	
+func (service *Service) LostConnection(err string) {
+	service.Logf("Connect lost: %v", err)
 }
 
 
+func (service *Service)lost() {
+	fmt.Println("Em meu lugar o que Eugenio faria?")
+}
+
 // Handle Connection Lost
-var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-    
+var connectLostHandler mqtt.ConnectionLostHandler =  func(client mqtt.Client, err error) {
+	//test("ok")
 	fmt.Printf("Connect lost: %v", err)
 	if err != nil{
-		//LostConnection(err)
+
 	}
 }
 
