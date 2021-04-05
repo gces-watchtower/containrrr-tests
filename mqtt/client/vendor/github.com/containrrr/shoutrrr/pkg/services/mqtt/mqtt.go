@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	maxlength = 4096
+	maxlength = 268435455
 )
 
 // Service sends notifications to mqtt topic
@@ -26,9 +26,13 @@ type Service struct {
 
 // Send notification to mqtt
 func (service *Service) Send(message string, params *types.Params) error {
-	if len(message) > maxlength {
-		return errors.New("message exceeds the max length")
-	}
+	
+	items, omitted := util.MessageItemsFromLines(message, types.MessageLimit{ maxLength, maxLength, 2})
+
+	if omitted > 0 {
+		message = items[0].Text
+        service.Logf("omitted %v character(s) from the message", omitted)
+    }
 
 	config := *service.config
 	if err := service.pkr.UpdateConfigFromParams(&config, params); err != nil {
