@@ -1,11 +1,11 @@
 package mqtt
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/url"
 
+	"github.com/containrrr/shoutrrr/pkg/util"
 	"github.com/containrrr/shoutrrr/pkg/format"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 
@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	maxlength = 268435455
+	maxLength = 268435455
 )
 
 // Service sends notifications to mqtt topic
@@ -27,12 +27,12 @@ type Service struct {
 // Send notification to mqtt
 func (service *Service) Send(message string, params *types.Params) error {
 	
-	items, omitted := util.MessageItemsFromLines(message, types.MessageLimit{ maxLength, maxLength, 2})
+	message, omitted := MessageLimit(message)
 
 	if omitted > 0 {
-		message = items[0].Text
-        service.Logf("omitted %v character(s) from the message", omitted)
+		service.Logf("omitted %v character(s) from the message", omitted)
     }
+
 
 	config := *service.config
 	if err := service.pkr.UpdateConfigFromParams(&config, params); err != nil {
@@ -60,6 +60,15 @@ func (service *Service) Initialize(configURL *url.URL, logger *log.Logger) error
 
 	return nil
 }
+
+
+func MessageLimit(message string) (string, int){
+	size := util.Min(maxLength, len(message))
+	omitted := len(message) - size
+	
+	return message[:size], omitted
+}
+
 
 // GetConfig returns the Config for the service
 func (service *Service) GetConfig() *Config {
