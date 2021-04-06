@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	maxLength = 4096
+	maxLength = 270
 	//maxLength = 4096
 )
 
@@ -27,21 +27,15 @@ type Service struct {
 	pkr    format.PropKeyResolver
 }
 
+
+
 // Send notification to mqtt
 func (service *Service) Send(message string, params *types.Params) error {
-	//test := message[:maxLength] + "\n" + message[maxLength:]
-	//message = test
-	//fmt.Println(test)
-
-	items, omitted := util.MessageItemsFromLines(message, types.MessageLimit{ maxLength, maxLength, 2})
-	
-	//fmt.Println(items[0].Text)
-	//fmt.Println(omitted)
+		
+	message, omitted := MessageLimit(message)
 
 	if omitted > 0 {
-		message = items[0].Text
-		//fmt.Println(message)    
-        service.Logf("omitted %v character(s) from the message", omitted)
+		service.Logf("omitted %v character(s) from the message", omitted)
     }
 
 	config := *service.config
@@ -65,6 +59,17 @@ func (service *Service) Initialize(configURL *url.URL, logger *log.Logger) error
 
 	return nil
 }
+
+
+func MessageLimit(message string) (string, int){
+	
+	size := util.Min(maxLength, len(message))
+	omitted := len(message) - size
+	
+	return message[:size], omitted
+
+}
+
 
 // GetConfig returns the Config for the service
 func (service *Service) GetConfig() *Config {
