@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	service          *Service
+	service    *Service
 	envMqttURL *url.URL
 )
 
@@ -20,10 +20,10 @@ func TestMqtt(t *testing.T) {
 	RunSpecs(t, "Shoutrrr MQTT Suite")
 }
 
-var _ = Describe("the mattermost service", func() {
+var _ = Describe("the  service", func() {
 	BeforeSuite(func() {
 		service = &Service{}
-		envMattermostURL, _ = url.Parse(os.Getenv("SHOUTRRR_MQTT_URL"))
+		envMqttURL, _ = url.Parse(os.Getenv("SHOUTRRR_MQTT_URL"))
 	})
 	When("running integration tests", func() {
 		It("should work without errors", func() {
@@ -39,11 +39,13 @@ var _ = Describe("the mattermost service", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
+
+	
 	Describe("the mqtt config", func() {
 		When("generating a config object", func() {
 			mqttURL, _ := url.Parse("mqtt://localhost:1883?topic=topic/test")
 			config := &Config{}
-			err := config.SetURL(mattermostURL)
+			err := config.SetURL(mqttURL)
 			It("should not have caused an error", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -59,9 +61,9 @@ var _ = Describe("the mattermost service", func() {
 			})
 		})
 		When("generating a new config with url, that has no token", func() {
-			mattermostURL, _ := url.Parse("mqtt://localhost:1883?topic=topic/test")
+			mqttURL, _ := url.Parse("mqtt://localhost:1883?topic=topic/test")
 			config := &Config{}
-			err := config.SetURL(mattermostURL)
+			err := config.SetURL(mqttURL)
 			It("should return an error", func() {
 				Expect(err).To(HaveOccurred())
 			})
@@ -80,4 +82,7 @@ var _ = Describe("the mattermost service", func() {
 				err := mqtt.Send(mqttURL, "this is a message")
 				Expect(err).NotTo(HaveOccurred())
 				})
+			})
 		})
+	})
+})
