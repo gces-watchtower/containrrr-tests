@@ -17,12 +17,20 @@ import (
 // Config for use within the mqtt
 type Config struct {
 	Host       string `key:"host" default:"" desc:"MQTT broker server hostname or IP address"`
-	Port       uint16 `key:"port" default:"8883" desc:"SMTP server port, common ones are 8883, 1883"`
+	Port       uint16 `key:"port" default:"8883" desc:"MQTT server port, common ones are 8883, 1883"`
 	Topic      string `key:"topic" default:"" desc:"Topic where the message is sent"`
 	ClientId   string `key:"clientid" default:"" desc:"client's id from the message is sent"`
 	Username   string `key:"username" default:"" desc:"username for auth"`
 	Password   string `key:"password" default:"" desc:"password for auth"`
 	DisableTLS bool   `key:"disabletls" default:"No"`
+}
+
+// DefaultConfig creates a PropKeyResolver and uses it to populate the default values of a new Config, returning both
+func DefaultConfig() (*Config, format.PropKeyResolver) {
+	config := &Config{}
+	pkr := format.NewPropKeyResolver(config)
+	_ = pkr.SetDefaultProps(config)
+	return config, pkr
 }
 
 // Enums returns the fields that should use a corresponding EnumFormatter to Print/Parse their values
