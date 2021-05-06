@@ -10,9 +10,9 @@ import (
 func main() {
 
 	broker := "localhost"
-	port := 8883
+	port := 1883
 	topic := "topic/test"
-	disableTls := "false"
+	disableTls := "true"
 	clientId := "1"
 	username := "eugenio"
 	password := "12345"
